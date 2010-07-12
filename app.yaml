@@ -6,3 +6,6 @@ api_version: 1
 handlers:
 - url: /fxbook
   script: fxbook.py
+
+- url: /test
+  script: test-fx.py
