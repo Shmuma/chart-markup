@@ -13,5 +13,8 @@ handlers:
 - url: /my-account
   script: my-account.py
 
+- url: /myfxhistory
+  script: myfxhistory.py
+
 - url: /css
   static_dir: css
