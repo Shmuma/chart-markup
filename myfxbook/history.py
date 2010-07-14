@@ -1,7 +1,24 @@
 from google.appengine.api import memcache
 from google.appengine.api import urlfetch
+from google.appengine.ext import db
 
 from HTMLParser import HTMLParser
+
+import account
+
+class MyFXHistoryRecord (db.Model):
+    account = db.ReferenceProperty (account.MyFXAccount)
+    pair = db.StringProperty (required = True)
+    open_at = db.DateTimeProperty (required = True)
+    closed_at = db.DateTimeProperty (required = True)
+    long = db.BooleanProperty (required = True)
+    size = db.FloatProperty (required = True)
+    sl_price = db.FloatProperty ()
+    tp_price = db.FloatProperty ()
+    open_price = db.FloatProperty (required = True)
+    close_price = db.FloatProperty (required = True)
+    pips = db.FloatProperty (required = True)
+    profit = db.FloatProperty (required = True)
 
 
 class PagesCache:
@@ -76,23 +93,13 @@ class FXBookHistoryFetcher:
         return None
 
 
-# Class parses html history data and returns apropirate format.
-class FXBookHistoryFilter:
-    def __init__ (self, html):
-        parser = HistoryHtmlParser ()
-        parser.feed (html);
-        parser.close ()
-        self.data = parser.res
-        self.html = html
 
-    def csv (self):
-        return self.data
-
-
+# Parser of history data. Returns list of hashes with orders performed.
 class HistoryHtmlParser (HTMLParser):
     def reset (self):
         HTMLParser.reset (self)
-        self.data = {}
+        self.data = []
+        self.entry = {}
         self.res = ""
         self.in_tr = False
         self.in_td = False
@@ -119,6 +126,7 @@ class HistoryHtmlParser (HTMLParser):
         if self.in_tr and self.in_td and txt:
             if self.td_index == 1:
                 self.res += "\n"
+            self.entry[self.index2key (self.td_index)] = txt
             self.res += "%d: %s\n" % (self.td_index, txt)
 
     def handle_endtag (self, tag):
@@ -126,7 +134,31 @@ class HistoryHtmlParser (HTMLParser):
             self.in_tr = False
             self.in_td = False
             self.td_index = 0
+            if self.entry:
+                # filter out deposits
+                if 'pair' in self.entry:
+                    self.data.append (self.entry)
+                self.entry = {}
         elif tag == "td":
             self.in_td = False
-            
-            
+
+    def index2key (self, index):
+        map = {
+            1: 'open_at',
+            2: 'closed_at',
+            3: 'pair',
+            4: 'action',
+            5: 'size',
+            6: 'sl_price',
+            7: 'tp_price',
+            8: 'open_price',
+            9: 'close_price',
+            10: 'pips',
+            11: 'profit',
+            12: 'comment'}
+
+        if index in map:
+            return map[index]
+        else:
+            return 'unknown'
+

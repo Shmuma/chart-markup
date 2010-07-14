@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <title>Watched accounts</title>
+    <link rel="stylesheet" href="/css/style.css" type="text/css" media="screen" />
+  </head>
+  <body>
+    <h1>MyFXBook accounts</h1>
+    <table class="display" cellspacing="0" cellpadding="6">
+      <tr>
+        <th class="display">№</th>
+        <th class="display">ID</th>
+        <th class="display">Orders</th>
+        <th class="display" nowrap="1">Last page</th>
+        <th class="display">Change</th>
+      </tr>
+      {% for account in accounts %}
+      <tr>
+        <td class="display">{{ forloop.counter }}</td>
+        <td class="display"><a href="{{ account.url }}">{{ account.id }}</a></td>
+        <td class="display">{{ account.orders }}</td>
+        <td class="display">{{ account.last_page }}</td>
+        <td class="display"><a href="/my-account?delete={{account.key}}">Delete</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>

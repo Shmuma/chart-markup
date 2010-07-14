@@ -1,0 +1,19 @@
+body,table,td,th,ul,ol,textarea,input,p {
+    font-family: verdana, arial, sans-serif;
+    font-size: 12 px;
+}
+
+h1 {
+    font-size: 14 px;
+}
+
+table.display {
+    border-collapse: collapse;
+}
+
+td.display,th.display {
+    border: 1px solid #333
+}
+
+table.layout {
+}

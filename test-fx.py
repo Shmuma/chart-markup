@@ -18,6 +18,6 @@ account = cgi.FieldStorage ()['id'].value
 page = int (cgi.FieldStorage ()['page'].value)
 
 hist = history.FXBookHistoryFetcher (account, page)
-filter = history.FXBookHistoryFilter (hist.fetch ())
-
-print filter.csv ()
+parser = history.HistoryHtmlParser ()
+parser.feed (hist.fetch ())
+print parser.data

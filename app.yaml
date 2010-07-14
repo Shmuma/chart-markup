@@ -9,3 +9,9 @@ handlers:
 
 - url: /test
   script: test-fx.py
+
+- url: /my-account
+  script: my-account.py
+
+- url: /css
+  static_dir: css
