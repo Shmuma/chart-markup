@@ -171,3 +171,11 @@ def record_exists (hist):
 
 def have_history_records (acc, page):
     return MyFXHistoryRecord.gql ("WHERE account = :1 and page = :2", acc, page).count (1) > 0
+
+def remove_account (acc):
+    while True:
+        hist = MyFXHistoryRecord.gql ("WHERE account = :1", acc).fetch (100)
+        if not hist:
+            break
+        db.delete (hist)
+    acc.delete ()

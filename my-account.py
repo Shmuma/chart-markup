@@ -7,6 +7,7 @@ from google.appengine.ext.webapp import template
 from google.appengine.ext import db
 
 from myfxbook import account
+from myfxbook import history
 import urllib
 import sys
 
@@ -31,7 +32,7 @@ class MyFXAccount (webapp.RequestHandler):
             return
         acc_id = acc.id
         # the right way to remove account
-        account.remove (acc)
+        history.remove_account (acc)
         self.redirect_message ("Account '%s' removed" % acc_id)
 
 
