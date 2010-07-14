@@ -5,9 +5,11 @@ from google.appengine.ext import db
 from HTMLParser import HTMLParser
 
 import account
+import datetime
 
 class MyFXHistoryRecord (db.Model):
     account = db.ReferenceProperty (account.MyFXAccount)
+    page = db.IntegerProperty (required = True)
     pair = db.StringProperty (required = True)
     open_at = db.DateTimeProperty (required = True)
     closed_at = db.DateTimeProperty (required = True)
@@ -19,6 +21,7 @@ class MyFXHistoryRecord (db.Model):
     close_price = db.FloatProperty (required = True)
     pips = db.FloatProperty (required = True)
     profit = db.FloatProperty (required = True)
+    comment = db.StringProperty ()
 
 
 class PagesCache:
@@ -49,31 +52,20 @@ class PagesCache:
 
 
 class FXBookHistory:
-    def __init__ (self, account):
-        self.account = account
+    def __init__ (self, acc_id, pair):
+        self.account = account.MyFXAccount.gql ("WHERE id = :1", acc_id).get ()
+        self.pair = pair
 
-        # get history data
-        pc = PagesCache (account)
-        pages = pc.count ()
-        if pages:
-            for page in xrange (0, pages-1):
-                print page
-        else:
-            page = 0
-            while True:
-                data = pc.page (page)
-                if not data:
-                    break
-                print data
-                page += 1
-            pc.new_count (page)
-
-    def csv (header = True):
+    def csv (self, header = True):
         """ Return history data as CSV text
         """
-        res = ['open_date,close_date,symbol,action,lots,sl,tp,open_price,close_price,pips,profit']
+        res = 'open_date,close_date,long,lots,sl,tp,open_price,close_price,pips,profit\n'
+        recs = MyFXHistoryRecord.gql ("WHERE account=:1 and pair=:2", self.account, self.pair)
+      
+        for rec in recs:
+            res += "%s,%s,%s,%s,%s\n" % (rec.open_at, rec.closed_at, rec.long, rec.size, rec.sl_price)
 
-        return '\n'.join (res)
+        return res
 
 
 # Class downloads given history page from myfxbook account
@@ -137,6 +129,8 @@ class HistoryHtmlParser (HTMLParser):
             if self.entry:
                 # filter out deposits
                 if 'pair' in self.entry:
+                    if not 'comment' in self.entry:
+                        self.entry['comment'] = ""
                     self.data.append (self.entry)
                 self.entry = {}
         elif tag == "td":
@@ -162,3 +156,18 @@ class HistoryHtmlParser (HTMLParser):
         else:
             return 'unknown'
 
+# parse '05.12.2010 20:50' to datetime
+def parse_date (str):
+    date,time = str.split (' ')
+    mon,day,year = date.split ('.')
+    hr,min = time.split (':')
+    return datetime.datetime (int (year), int (mon), int (day),
+                              int (hr), int (min))
+
+# check that such record exists. Use pair, account, open@, close@ as a key
+def record_exists (hist):
+    return MyFXHistoryRecord.gql ("WHERE account = :1 and pair = :2 and open_at = :3 and closed_at = :4",
+                                  hist.account, hist.pair, hist.open_at, hist.closed_at).count (1) > 0
+
+def have_history_records (acc, page):
+    return MyFXHistoryRecord.gql ("WHERE account = :1 and page = :2", acc, page).count (1) > 0

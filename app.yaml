@@ -7,14 +7,14 @@ handlers:
 - url: /fxbook
   script: fxbook.py
 
-- url: /test
-  script: test-fx.py
-
 - url: /my-account
   script: my-account.py
 
-- url: /myfxhistory
-  script: myfxhistory.py
+- url: /fetch-myhist
+  script: fetch-myhist.py
 
 - url: /css
   static_dir: css
+
+- url: /wipe
+  script: wipe.py

@@ -4,7 +4,11 @@ from google.appengine.ext.webapp import template
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template
+from google.appengine.ext import db
 
+from myfxbook import account
+import urllib
+import sys
 
 class MyFXAccount (webapp.RequestHandler):
     def expand_template (self, name, args):
@@ -12,7 +16,28 @@ class MyFXAccount (webapp.RequestHandler):
         self.response.out.write (template.render (path, args))
 
     def get (self):
-        self.expand_template ("tmpl/my-account.html", {})
+        if self.request.get ("delete"):
+            self.delete_account (self.request.get ("delete"))
+            return
+
+        self.expand_template ("tmpl/my-account.html", {"accounts": account.MyFXAccount.all (),
+                                                       "msg": self.request.get ("msg")})
+
+    def delete_account (self, id):
+        try:
+            acc = account.MyFXAccount.get (db.Key (id))
+        except:
+            self.redirect_message ("Account deletion error: %s" % sys.exc_info ()[1])
+            return
+        acc_id = acc.id
+        # the right way to remove account
+        account.remove (acc)
+        self.redirect_message ("Account '%s' removed" % acc_id)
+
+
+    def redirect_message (self, msg):
+        self.redirect (self.request.path + "?msg=" + urllib.quote_plus (msg))
+        
 
 app = webapp.WSGIApplication ([('/my-account', MyFXAccount)], debug=True)
 
