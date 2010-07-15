@@ -50,12 +50,13 @@ class FXBookHistory:
     def csv (self, header = True):
         """ Return history data as CSV text
         """
-        res = 'open_date,close_date,long,lots,sl,tp,open_price,close_price,pips,profit\n'
+        res = 'open_date,close_date,long,lots,sl,tp,open_price,close_price,pips,profit,comment\n'
         recs = MyFXHistoryRecord.gql ("WHERE account=:1 and pair=:2", self.account, self.pair)
       
         for rec in recs:
-            res += "%s,%s,%s,%s,%s\n" % (rec.open_at, rec.closed_at, rec.long, rec.size, rec.sl_price)
-
+            res += "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (rec.open_at, rec.closed_at, rec.long, rec.size,
+                                                           rec.sl_price, rec.tp_price, rec.open_price, rec.close_price,
+                                                           rec.pips, rec.profit, rec.comment)
         return res
 
 
