@@ -33,6 +33,8 @@ parser.feed (fetcher.fetch ())
 check_existence = history.have_history_records (acc, acc.last_page)
 
 count = len (parser.data)
+complete = parser.complete
+pairs = {}
 for entry in parser.data:
     # make MyFXHistoryRecord instance
     rec = history.MyFXHistoryRecord (account = acc, page = acc.last_page,
@@ -48,13 +50,14 @@ for entry in parser.data:
                                      pips = float (entry['pips']),
                                      profit = float (entry['profit']),
                                      comment = entry['comment'])
+    pairs[entry['pair']] = 1
     valid = not (check_existence and history.record_exists (rec))
     if valid:
         rec.put ();
         acc.orders += 1
 
 # If page is empty, we'll check it later
-if count == 0:
+if count == 0 or not complete:
     acc.last_page -= 1
 acc.put ()
 
@@ -62,6 +65,11 @@ if count == 0:
     countdown = 10*60
 else:
     countdown = 1
+
+# wipe cache of affected pairs
+for pair in pairs.keys ():
+    cache = history.HistoryDataCache (acc_id, pair)
+    cache.delete ()
 
 try:
     q = taskqueue.Queue ("myfxhistory")

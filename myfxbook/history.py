@@ -24,31 +24,22 @@ class MyFXHistoryRecord (db.Model):
     comment = db.StringProperty ()
 
 
-class PagesCache:
-    def __init__ (self, account):
+class HistoryDataCache:
+    def __init__ (self, account, pair):
         self.account = account
+        self.pair = pair
 
-    def count_key (self):
-        return "fxbook-%s-pages" % self.account
+    def csv_key (self):
+        return "myfx-history-csv-%s-%s" % (self.account, self.pair)
 
-    def page_key (self, index):
-        return "fxbook-%s-page-%d" % (self.account, index)
+    def csv (self):
+        return memcache.get (self.csv_key ())
 
-    def count (self):
-        pages = memcache.get (self.count_key ())
-        if pages:
-            return pages
-        else:
-            return 0
+    def delete (self):
+        memcache.delete (self.csv_key ())
 
-    def new_count (self, count):
-        memcache.set (self.count_key (), count)
-
-    def page (self, index):
-        data = memcache.get (self.page_key (index))
-        if data:
-            return data
-        return FXBookHistoryFetcher (self.account, index)
+    def set_csv (self, csv, time = 0):
+        memcache.set (self.csv_key (), csv, time = time)
 
 
 class FXBookHistory:
@@ -90,12 +81,15 @@ class FXBookHistoryFetcher:
 class HistoryHtmlParser (HTMLParser):
     def reset (self):
         HTMLParser.reset (self)
-        self.data = []
         self.entry = {}
         self.res = ""
         self.in_tr = False
         self.in_td = False
         self.td_index = 0
+        self.tr_count = 0
+        # output
+        self.data = []
+        self.complete = False
 
     def has_class (self, attrs):
         for a,b in attrs:
@@ -125,6 +119,8 @@ class HistoryHtmlParser (HTMLParser):
         if tag == "tr":
             self.in_tr = False
             self.in_td = False
+            self.tr_count += 1
+            self.complete = self.tr_count >= 20
             self.td_index = 0
             if self.entry:
                 # filter out deposits

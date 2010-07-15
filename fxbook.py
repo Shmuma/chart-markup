@@ -17,5 +17,15 @@ if not 'pair' in cgi.FieldStorage ():
 account = cgi.FieldStorage ()['id'].value
 pair = cgi.FieldStorage ()['pair'].value
 
-hist = history.FXBookHistory (account, pair)
-print hist.csv ()
+cache = history.HistoryDataCache (account, pair)
+
+res = cache.csv ()
+
+if res:
+    print res
+else:
+    hist = history.FXBookHistory (account, pair)
+    res = hist.csv ()
+    cache.set_csv (res)
+    print res
+
