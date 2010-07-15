@@ -6,7 +6,7 @@ class MyFXAccount (db.Model):
     last_page = db.IntegerProperty (default = 0)
     orders = db.IntegerProperty (default = 0)
     url = db.StringProperty ()
-
+    pairs_map = db.BlobProperty ()
 
 def by_id (id):
     return MyFXAccount.gql ("WHERE id=:1", id).get ()

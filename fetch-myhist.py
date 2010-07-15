@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import cgi
+import pickle
 from myfxbook import history
 from myfxbook import account
 
@@ -30,6 +31,13 @@ fetcher = history.FXBookHistoryFetcher (acc_id, acc.last_page)
 parser = history.HistoryHtmlParser ()
 parser.feed (fetcher.fetch ())
 
+if not acc.pairs_map:
+    pairs_map = {}
+else:
+    pairs_map = pickle.loads (acc.pairs_map)
+    if not pairs_map:
+        pairs_map = {}
+
 check_existence = history.have_history_records (acc, acc.last_page)
 
 count = len (parser.data)
@@ -37,8 +45,9 @@ complete = parser.complete
 pairs = {}
 for entry in parser.data:
     # make MyFXHistoryRecord instance
+    pair = entry['pair']
     rec = history.MyFXHistoryRecord (account = acc, page = acc.last_page,
-                                     pair = entry['pair'],
+                                     pair = pair,
                                      open_at = history.parse_date (entry['open_at']),
                                      closed_at = history.parse_date (entry['closed_at']),
                                      long = entry['action'] == "Buy",
@@ -50,7 +59,10 @@ for entry in parser.data:
                                      pips = float (entry['pips']),
                                      profit = float (entry['profit']),
                                      comment = entry['comment'])
-    pairs[entry['pair']] = 1
+    pairs[pair] = 1
+    if not pair in pairs_map:
+        pairs_map[pair] = 0
+    pairs_map[pair] += 1
     valid = not (check_existence and history.record_exists (rec))
     if valid:
         rec.put ();
@@ -59,9 +71,10 @@ for entry in parser.data:
 # If page is empty, we'll check it later
 if count == 0 or not complete:
     acc.last_page -= 1
+acc.pairs_map = pickle.dumps (pairs_map)
 acc.put ()
 
-if count == 0:
+if count == 0 or not complete:
     countdown = 10*60
 else:
     countdown = 1

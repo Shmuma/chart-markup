@@ -9,6 +9,7 @@ print 'Content-Type: text/plain'
 print ''
 
 try:
+    db.delete (account.MyFXAccount.all (keys_only = True).fetch (500))
     db.delete (history.MyFXHistoryRecord.all (keys_only = True).fetch (500))
 except:
     print "Have entries to delete: %d" % history.MyFXHistoryRecord.all ().count ()

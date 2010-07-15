@@ -8,6 +8,7 @@ from google.appengine.ext import db
 
 from myfxbook import account
 from myfxbook import history
+import pickle
 import urllib
 import sys
 
@@ -21,7 +22,23 @@ class MyFXAccount (webapp.RequestHandler):
             self.delete_account (self.request.get ("delete"))
             return
 
-        self.expand_template ("tmpl/my-account.html", {"accounts": account.MyFXAccount.all (),
+        accounts = []
+        for acc in account.MyFXAccount.all ():
+            pairs = []
+            if acc.pairs_map:
+                pairs_map = pickle.loads (acc.pairs_map)
+                for pair in pairs_map.keys ():
+                    pairs.append ({'pair': pair, 'count': pairs_map[pair], 'url': "/fxbook?id=%s&pair=%s" % (acc.id, pair)})
+            acc_info = { 'url': acc.url,
+                         'id': acc.id,
+                         'orders': acc.orders,
+                         'last_page': acc.last_page,
+                         'key': acc.key (),
+                         'pairs': pairs
+                         }
+            print acc_info
+            accounts.append (acc_info)
+        self.expand_template ("tmpl/my-account.html", {"accounts": accounts,
                                                        "msg": self.request.get ("msg")})
 
     def delete_account (self, id):
