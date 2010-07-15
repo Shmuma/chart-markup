@@ -5,8 +5,6 @@ import pickle
 from myfxbook import history
 from myfxbook import account
 
-from google.appengine.api.labs import taskqueue
-
 print 'Content-Type: text/plain'
 print ''
 
@@ -84,10 +82,5 @@ for pair in pairs.keys ():
     cache = history.HistoryDataCache (acc_id, pair)
     cache.delete ()
 
-try:
-    q = taskqueue.Queue ("myfxhistory")
-    q.add (taskqueue.Task (method = "GET", url = "/fetch-myhist?id=%s" % acc_id, countdown = countdown))
-except:
-    pass
-
+account.schedule_fetch (acc_id, time=coutdown)
 print 'ok, countdown = %d' % countdown

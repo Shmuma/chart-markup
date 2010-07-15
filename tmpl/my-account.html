@@ -7,6 +7,24 @@
     <h1>MyFXBook accounts</h1>
     <p>{{ msg }}</p>
 
+    {% if add_form %}
+    <form method="get" action="/my-account">
+      <table cellspacing="0" cellpadding="4" class="layout">
+        <tr>
+          <td>ID</td>
+          <td><input type="text" name="id"/></td>
+        </tr>
+        <tr>
+          <td>URL</td>
+          <td><input type="text" name="url"/></td>
+        </tr>
+        <tr>
+          <td colspan=2><input type="submit" name="add" value="Add new account" /></td>
+        </tr>
+      </table>
+    </form>
+    {% endif %}
+
     <table class="display" cellspacing="0" cellpadding="6">
       <tr>
         <th class="display">№</th>
@@ -31,5 +49,7 @@
       </tr>
       {% endfor %}
     </table>
+
+    <p><a href="/my-account?add_form=1">Add new account</a></p>
   </body>
 </html>

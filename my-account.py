@@ -21,6 +21,9 @@ class MyFXAccount (webapp.RequestHandler):
         if self.request.get ("delete"):
             self.delete_account (self.request.get ("delete"))
             return
+        elif self.request.get ("add"):
+            self.add_account (self.request.get ("id"), self.request.get ("url"))
+            return
 
         accounts = []
         for acc in account.MyFXAccount.all ():
@@ -38,7 +41,8 @@ class MyFXAccount (webapp.RequestHandler):
                          }
             print acc_info
             accounts.append (acc_info)
-        self.expand_template ("tmpl/my-account.html", {"accounts": accounts,
+        self.expand_template ("tmpl/my-account.html", {"add_form": self.request.get ("add_form"),
+                                                       "accounts": accounts,
                                                        "msg": self.request.get ("msg")})
 
     def delete_account (self, id):
@@ -56,6 +60,16 @@ class MyFXAccount (webapp.RequestHandler):
     def redirect_message (self, msg):
         self.redirect (self.request.path + "?msg=" + urllib.quote_plus (msg))
         
+
+    def add_account (self, id, url):
+        if account.by_id (id):
+            self.redirect_message ("Account %s already exists" % id)
+            return
+        acc = account.MyFXAccount (id = id, url = url)
+        acc.put ()
+        # schedule account fetch
+        account.schedule_fetch (id, time=1)
+        self.redirect_message ("Account %s created" % id)
 
 app = webapp.WSGIApplication ([('/my-account', MyFXAccount)], debug=True)
 
