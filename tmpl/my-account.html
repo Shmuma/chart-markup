@@ -22,9 +22,9 @@
         <td class="display"><a href="{{ account.url }}">{{ account.id }}</a></td>
         <td class="display">{{ account.last_page }}</td>
         <td class="display">{{ account.orders }}</td>
-        <td class="display" nowrap="1">
+        <td class="display">
           {% for pair in account.pairs %}
-          <a href="{{pair.url}}">{{pair.pair}}:&nbsp;{{pair.count}}</a>&nbsp;
+          <a href="{{pair.url}}">{{pair.pair}}:&nbsp;{{pair.count}}</a> 
           {% endfor %}
         </td>
         <td class="display"><a href="/my-account?delete={{account.key}}">Delete</a></td>
