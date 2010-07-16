@@ -44,10 +44,10 @@ string str_replace (string data, string a, string b)
 
 
 
-datetime parse_iso_date (string val)
+datetime parse_iso_date (string val, int delta)
 {
     string a = str_replace (val, "-", ".");
-    return (StrToTime (a)+43200);
+    return (StrToTime (a) + delta);
 }
 
 

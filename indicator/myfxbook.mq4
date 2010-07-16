@@ -74,8 +74,8 @@ void insert_order (string acc_id, string pair, string line)
 
     fields[0] = acc_id;
     fields[1] = pair;
-    fields[2] = parse_iso_date (items[0]);
-    fields[3] = parse_iso_date (items[1]);
+    fields[2] = parse_iso_date (items[0], 2*60*60);
+    fields[3] = parse_iso_date (items[1], 2*60*60);
     if (items[2] == "True")
         fields[4] = 1;
     else
@@ -120,7 +120,7 @@ void update_data (string acc_id, string pair)
 
 string obj_name (int index)
 {
-    return ("myfx-" + account_id + "-" + Symbol () + "=" + index);
+    return ("myfx-" + account_id + "-" + Symbol () + "-" + index);
 }
 
 
@@ -129,14 +129,31 @@ void make_object_for_order (string open_ts, string close_ts, string is_long_str,
 {
     bool res, is_long = is_long_str == "1";
 
+    // Open object
     res = ObjectCreate (obj_name (objects_count), OBJ_ARROW, 0, StrToInteger (open_ts), StrToDouble (open_price));
     if (!res)
         return;
-    if (is_long)
+    if (is_long) {
         ObjectSet (obj_name (objects_count), OBJPROP_ARROWCODE, SYMBOL_ARROWUP);
-    else
+        ObjectSet (obj_name (objects_count), OBJPROP_COLOR, Green);
+    }
+    else {
         ObjectSet (obj_name (objects_count), OBJPROP_ARROWCODE, SYMBOL_ARROWDOWN);
-    Print ("make object at " + open_ts + "," + open_price);
+        ObjectSet (obj_name (objects_count), OBJPROP_COLOR, Red);
+    }
+    objects_count++;
+
+    // Close object
+    ObjectCreate (obj_name (objects_count), OBJ_ARROW, 0, StrToInteger (close_ts), StrToDouble (close_price));
+
+    if (StrToDouble (profit) > 0) {
+        ObjectSet (obj_name (objects_count), OBJPROP_ARROWCODE, SYMBOL_CHECKSIGN);
+        ObjectSet (obj_name (objects_count), OBJPROP_COLOR, Green);       
+    }
+    else {
+        ObjectSet (obj_name (objects_count), OBJPROP_ARROWCODE, SYMBOL_STOPSIGN);
+        ObjectSet (obj_name (objects_count), OBJPROP_COLOR, Red);
+    }
     objects_count++;
 }
 
