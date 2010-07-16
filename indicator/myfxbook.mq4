@@ -13,6 +13,8 @@ extern string account_id = "38016";
 string db_file = "experts/files/myfxbook.db";
 string orders_fields = "acc_id, pair, open_ts, close_ts, long, lots, sl, tp, open_price, close_price, pips, profit, comment";
 
+int objects_count = 0;          // Amount of created objects. Used in destruction.
+
 
 void create_schema ()
 {
@@ -83,8 +85,8 @@ void insert_order (string acc_id, string pair, string line)
     fields[7] = items[5];       // tp
     fields[8] = items[6];       // open_price
     fields[9] = items[7];       // close_price
-    fields[10] = items[8];       // pips
-    fields[11] = items[9];       // profit
+    fields[10] = items[8];      // pips
+    fields[11] = items[9];      // profit
     fields[12] = comm;
 
     sqlite_exec (db_file, "insert into orders (" + orders_fields + ") values (" + 
@@ -116,6 +118,53 @@ void update_data (string acc_id, string pair)
 }
 
 
+string obj_name (int index)
+{
+    return ("myfx-" + account_id + "-" + Symbol () + "=" + index);
+}
+
+
+void make_object_for_order (string open_ts, string close_ts, string is_long_str, string lots, string sl, string tp,
+                            string open_price, string close_price, string pips, string profit, string comment)
+{
+    bool res, is_long = is_long_str == "1";
+
+    res = ObjectCreate (obj_name (objects_count), OBJ_ARROW, 0, StrToInteger (open_ts), StrToDouble (open_price));
+    if (!res)
+        return;
+    if (is_long)
+        ObjectSet (obj_name (objects_count), OBJPROP_ARROWCODE, SYMBOL_ARROWUP);
+    else
+        ObjectSet (obj_name (objects_count), OBJPROP_ARROWCODE, SYMBOL_ARROWDOWN);
+    Print ("make object at " + open_ts + "," + open_price);
+    objects_count++;
+}
+
+
+void make_objects ()
+{
+    int cols[1];
+    int handle = sqlite_query (db_file, "select " + orders_fields + " from orders where acc_id = '" + account_id +
+                               "' and pair = '" + Symbol () + "'", cols);
+
+    while (sqlite_next_row (handle) == 1) {
+        make_object_for_order (sqlite_get_col (handle, 2),
+                               sqlite_get_col (handle, 3),
+                               sqlite_get_col (handle, 4),
+                               sqlite_get_col (handle, 5),
+                               sqlite_get_col (handle, 6),
+                               sqlite_get_col (handle, 7),
+                               sqlite_get_col (handle, 8),
+                               sqlite_get_col (handle, 9),
+                               sqlite_get_col (handle, 10),
+                               sqlite_get_col (handle, 11),
+                               sqlite_get_col (handle, 12));
+    }
+
+    sqlite_free_query (handle);
+}
+
+
 int init ()
 {
     string pair = Symbol ();
@@ -134,11 +183,25 @@ int init ()
         update_data (account_id, pair);
     }
 
+    // create symbols according to data in DB.
+    make_objects ();
+
     return (0);
 }
 
 
 int start ()
 {
+    return (0);
+}
+
+
+int deinit ()
+{
+    while (objects_count > 0) {
+        objects_count--;
+        ObjectDelete (obj_name (objects_count));
+    }
+
     return (0);
 }
