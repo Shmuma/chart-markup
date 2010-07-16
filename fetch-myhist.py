@@ -57,14 +57,14 @@ for entry in parser.data:
                                      pips = float (entry['pips']),
                                      profit = float (entry['profit']),
                                      comment = entry['comment'])
-    pairs[pair] = 1
     if not pair in pairs_map:
         pairs_map[pair] = 0
-    pairs_map[pair] += 1
     valid = not (check_existence and history.record_exists (rec))
     if valid:
+        pairs[pair] = 1
         rec.put ();
         acc.orders += 1
+        pairs_map[pair] += 1
 
 # If page is empty, we'll check it later
 if count == 0 or not complete:
