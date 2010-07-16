@@ -82,5 +82,5 @@ for pair in pairs.keys ():
     cache = history.HistoryDataCache (acc_id, pair)
     cache.delete ()
 
-account.schedule_fetch (acc_id, time=coutdown)
+account.schedule_fetch (acc_id, time=countdown)
 print 'ok, countdown = %d' % countdown
