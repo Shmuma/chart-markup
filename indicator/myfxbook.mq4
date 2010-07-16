@@ -128,32 +128,40 @@ void make_object_for_order (string open_ts, string close_ts, string is_long_str,
                             string open_price, string close_price, string pips, string profit, string comment)
 {
     bool res, is_long = is_long_str == "1";
+    string name = obj_name (objects_count);
+    string comm;
 
     // Open object
-    res = ObjectCreate (obj_name (objects_count), OBJ_ARROW, 0, StrToInteger (open_ts), StrToDouble (open_price));
+    res = ObjectCreate (name, OBJ_ARROW, 0, StrToInteger (open_ts), StrToDouble (open_price));
     if (!res)
         return;
     if (is_long) {
-        ObjectSet (obj_name (objects_count), OBJPROP_ARROWCODE, SYMBOL_ARROWUP);
-        ObjectSet (obj_name (objects_count), OBJPROP_COLOR, Green);
+        ObjectSet (name, OBJPROP_ARROWCODE, SYMBOL_ARROWUP);
+        ObjectSet (name, OBJPROP_COLOR, Green);
+        comm = "Long, ";
     }
     else {
-        ObjectSet (obj_name (objects_count), OBJPROP_ARROWCODE, SYMBOL_ARROWDOWN);
-        ObjectSet (obj_name (objects_count), OBJPROP_COLOR, Red);
+        ObjectSet (name, OBJPROP_ARROWCODE, SYMBOL_ARROWDOWN);
+        ObjectSet (name, OBJPROP_COLOR, Red);
+        comm = "Short, ";
     }
+    ObjectSetText (name, comm + lots + " lots, sl @" + sl + ", tp @" + tp + ", comment '" + comment + "'");
+
     objects_count++;
+    name = obj_name (objects_count);
 
     // Close object
-    ObjectCreate (obj_name (objects_count), OBJ_ARROW, 0, StrToInteger (close_ts), StrToDouble (close_price));
+    ObjectCreate (name, OBJ_ARROW, 0, StrToInteger (close_ts), StrToDouble (close_price));
 
     if (StrToDouble (profit) > 0) {
-        ObjectSet (obj_name (objects_count), OBJPROP_ARROWCODE, SYMBOL_CHECKSIGN);
-        ObjectSet (obj_name (objects_count), OBJPROP_COLOR, Green);       
+        ObjectSet (name, OBJPROP_ARROWCODE, SYMBOL_CHECKSIGN);
+        ObjectSet (name, OBJPROP_COLOR, Green);
     }
     else {
-        ObjectSet (obj_name (objects_count), OBJPROP_ARROWCODE, SYMBOL_STOPSIGN);
-        ObjectSet (obj_name (objects_count), OBJPROP_COLOR, Red);
+        ObjectSet (name, OBJPROP_ARROWCODE, SYMBOL_STOPSIGN);
+        ObjectSet (name, OBJPROP_COLOR, Red);
     }
+    ObjectSetText (name, "Profit $" + profit + " (" + pips + " pips)");
     objects_count++;
 }
 
