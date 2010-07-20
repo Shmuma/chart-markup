@@ -53,8 +53,9 @@ class FXBookHistory:
         res = 'open_date,close_date,long,lots,sl,tp,open_price,close_price,pips,profit,comment\n'
         recs = MyFXHistoryRecord.gql ("WHERE account=:1 and pair=:2", self.account, self.pair)
       
+        delta = datetime.timedelta (minutes = self.account.delta_minutes)
         for rec in recs:
-            res += "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (rec.open_at, rec.closed_at, rec.long, rec.size,
+            res += "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (rec.open_at + delta, rec.closed_at + delta, rec.long, rec.size,
                                                            rec.sl_price, rec.tp_price, rec.open_price, rec.close_price,
                                                            rec.pips, rec.profit, rec.comment)
         return res

@@ -9,6 +9,7 @@ class MyFXAccount (db.Model):
     orders = db.IntegerProperty (default = 0)
     url = db.StringProperty ()
     pairs_map = db.BlobProperty ()
+    delta_minutes = db.IntegerProperty (default = 0)
 
 
 def by_id (id):
