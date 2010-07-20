@@ -6,6 +6,7 @@ from HTMLParser import HTMLParser
 
 import account
 import datetime
+import pickle
 
 class MyFXHistoryRecord (db.Model):
     account = db.ReferenceProperty (account.MyFXAccount)
@@ -167,8 +168,10 @@ def record_exists (hist):
     return MyFXHistoryRecord.gql ("WHERE account = :1 and pair = :2 and open_at = :3 and closed_at = :4",
                                   hist.account, hist.pair, hist.open_at, hist.closed_at).count (1) > 0
 
+
 def have_history_records (acc, page):
     return MyFXHistoryRecord.gql ("WHERE account = :1 and page = :2", acc, page).count (1) > 0
+
 
 def remove_account (acc):
     while True:
@@ -177,3 +180,9 @@ def remove_account (acc):
             break
         db.delete (hist)
     acc.delete ()
+
+
+def cleanup_cache (acc):
+    pairs_map = pickle.loads (acc.pairs_map)
+    for pair in pairs_map.keys ():
+        HistoryDataCache (acc.id, pair).delete ()

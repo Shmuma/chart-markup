@@ -7,19 +7,30 @@
     <h1>MyFXBook accounts</h1>
     <p>{{ msg }}</p>
 
-    {% if add_form %}
+    {% if add_form or edit %}
     <form method="get" action="/my-account">
       <table cellspacing="0" cellpadding="4" class="layout">
+        {% if add_form %}
         <tr>
           <td>ID</td>
           <td><input type="text" name="id"/></td>
         </tr>
+        {% endif %}
         <tr>
           <td>URL</td>
-          <td><input type="text" name="url"/></td>
+          <td><input type="text" name="url" value="{{edit.url}}"/></td>
         </tr>
         <tr>
+          <td>Time offset (min)</td>
+          <td><input type="text" name="delta_minutes" value="{{edit.delta_minutes}}"/></td>
+        </tr>
+        <tr>
+        {% if add_form %}
           <td colspan=2><input type="submit" name="add" value="Add new account" /></td>
+        {% else %}
+          <td colspan=2><input type="submit" value="Update account" /></td>
+          <input type="hidden" name="update" value="{{edit.key}}" />
+        {% endif %}
         </tr>
       </table>
     </form>
@@ -29,6 +40,7 @@
       <tr>
         <th class="display">№</th>
         <th class="display">ID</th>
+        <th class="display">Offset (min)</th>
         <th class="display" nowrap="1">Last page</th>
         <th class="display">Orders</th>
         <th class="display">Pairs</th>
@@ -38,6 +50,7 @@
       <tr>
         <td class="display">{{ forloop.counter }}</td>
         <td class="display"><a href="{{ account.url }}">{{ account.id }}</a></td>
+        <td class="display">{{ account.delta_minutes }}</td>
         <td class="display">{{ account.last_page }}</td>
         <td class="display">{{ account.orders }}</td>
         <td class="display">
@@ -45,7 +58,10 @@
           <a href="{{pair.url}}">{{pair.pair}}:&nbsp;{{pair.count}}</a> 
           {% endfor %}
         </td>
-        <td class="display"><a href="/my-account?delete={{account.key}}">Delete</a></td>
+        <td class="display" nowrap="1">
+          <a href="/my-account?edit={{account.key}}">Edit</a>&nbsp;
+          <a href="/my-account?delete={{account.key}}">Delete</a>
+        </td>
       </tr>
       {% endfor %}
     </table>
