@@ -52,8 +52,8 @@ class FXBookHistory:
         """ Return history data as CSV text
         """
         res = 'open_date,close_date,long,lots,sl,tp,open_price,close_price,pips,profit,comment\n'
-        recs = MyFXHistoryRecord.gql ("WHERE account=:1 and pair=:2", self.account, self.pair)
-      
+        recs = MyFXHistoryRecord.gql ("WHERE account=:1 and pair=:2 ORDER BY open_at ASC", self.account, self.pair)
+
         delta = datetime.timedelta (minutes = self.account.delta_minutes)
         for rec in recs:
             res += "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (rec.open_at + delta, rec.closed_at + delta, rec.long, rec.size,
