@@ -7,8 +7,8 @@
 #property indicator_buffers 0
 #property show_inputs
 
-
 extern string account_id = "38016";
+extern bool show_lines = true;
 
 string db_file = "experts/files/myfxbook.db";
 string orders_fields = "acc_id, pair, open_ts, close_ts, long, lots, sl, tp, open_price, close_price, pips, profit, comment";
@@ -217,6 +217,15 @@ int init ()
 
 int start ()
 {
+    if (!show_lines)
+        return (0);
+
+    int counted_bars = IndicatorCounted ();
+
+    for (int i = 0; i < Bars - counted_bars - 1; i++) {
+        // Interpolate, interpolate, interpolate!
+    }
+
     return (0);
 }
 
