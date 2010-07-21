@@ -78,8 +78,7 @@ class MyFXAccount (webapp.RequestHandler):
         try:
             delta = int (delta_minutes)
         except:
-            self.redirect_message ("Account deletion error: %s" % sys.exc_info ()[1])
-            return
+            delta = 0
 
         if account.by_id (id):
             self.redirect_message ("Account %s already exists" % id)
