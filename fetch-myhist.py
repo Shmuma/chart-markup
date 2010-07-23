@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import sys
 import cgi
 import pickle
 from myfxbook import history
@@ -43,30 +44,30 @@ else:
     try:
         print 'Got %d new orders, process them' % (count - acc.orders)
         for order in fetcher.orders[acc.orders:]:
-            pair = order[2]
+            pair = fetcher.get ('symbol', order)
             rec = history.MyFXHistoryRecord (account = acc,
-                                             open_at = history.parse_date (order[0]),
-                                             closed_at = history.parse_date (order[1]),
+                                             open_at = history.parse_date (fetcher.get ('open date', order)),
+                                             closed_at = history.parse_date (fetcher.get ('close date', order)),
                                              pair = pair,
-                                             long = order[3] == "Buy",
-                                             size = float (order[4]),
-                                             sl_price = float (order[5]),
-                                             tp_price = float (order[6]),
-                                             open_price = float (order[7]),
-                                             close_price = float (order[8]),
-                                             pips = float (order[11]),
-                                             profit = float (order[12]),
-                                             comment = order[13])
+                                             long = fetcher.get ('action', order) == "Buy",
+                                             size = float (fetcher.get ('lots', order)),
+                                             sl_price = float (fetcher.get ('sl', order)),
+                                             tp_price = float (fetcher.get ('tp', order)),
+                                             open_price = float (fetcher.get ('open price', order)),
+                                             close_price = float (fetcher.get ('close price', order)),
+                                             pips = float (fetcher.get ('pips', order)),
+                                             profit = float (fetcher.get ('profit', order)),
+                                             comment = fetcher.get ('comment', order))
             if not pair in pairs_map:
                 pairs_map[pair] = 0
             rec.put ()
             pairs[pair] = 1
             acc.orders += 1
             pairs_map[pair] += 1
-            acc.pairs_map = pickle.dumps (pairs_map)
-            acc.put ()
     except:
         account.schedule_fetch (acc_id)
+    acc.pairs_map = pickle.dumps (pairs_map)
+    acc.put ()
     # wipe cache for affected pairs
     for pair in pairs.keys ():
         cache = history.HistoryDataCache (acc_id, pair)

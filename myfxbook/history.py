@@ -74,19 +74,29 @@ class FXBookHistoryFetcher:
         if res.status_code == 200:
             # parse csv data
             reader = csv.reader (res.content.split ('\n'))
+            block = 0
             for row in reader:
-                if len (row) != 15 and len (row) != 13: 
+                if not len (row):
+                    continue
+                if row[0] == 'Open Date':
+                    block += 1
+                    if block > 1:
+                        break
+                    self.keys = dict (zip (map (lambda (s): s.lower (), row), xrange (len (row))))
+                    continue
+                if len (row) < 4:
                     continue
                 if not row[3] in ['Buy', 'Sell']:
                     continue;
-                if len (row) == 13:
-                    val = row[:10] + ['0.0', row[10], '0.0', row[11], '0']
-                else:
-                    val = row
                 # we insert in front, because data is sorted descending open timestamp
-                self.orders.insert (0, val)
+                self.orders.insert (0, row)
         return len (self.orders)
 
+    def get (self, key, arr):
+        if not key in self.keys:
+            return "0"
+        else:
+            return arr[self.keys[key]]
 
 # parse '05/13/2010 20:50' to datetime
 def parse_date (str):
