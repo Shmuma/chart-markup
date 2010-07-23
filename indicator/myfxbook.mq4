@@ -4,16 +4,26 @@
 
 #property copyright "Max Lapan <max.lapan@gmail.com>"
 #property indicator_chart_window
-#property indicator_buffers 0
+#property indicator_buffers 2
 #property show_inputs
 
-extern string account_id = "38016";
-extern bool show_lines = true;
+extern string account_id = "38557";
 
 string db_file = "experts/files/myfxbook.db";
 string orders_fields = "acc_id, pair, open_ts, close_ts, long, lots, sl, tp, open_price, close_price, pips, profit, comment";
 
 int objects_count = 0;          // Amount of created objects. Used in destruction.
+
+// order tables
+int orders_count;
+int start_bar[1];
+int end_bar[1];
+bool long_order[1];
+double open_prices[1];
+double close_prices[1];
+
+double long_buffer[];
+double short_buffer[];
 
 
 void create_schema ()
@@ -124,15 +134,29 @@ string obj_name (int index)
 }
 
 
-void make_object_for_order (string open_ts, string close_ts, string is_long_str, string lots, string sl, string tp,
-                            string open_price, string close_price, string pips, string profit, string comment)
+bool process_order (int order_index, datetime open_ts, datetime close_ts, bool is_long, string lots, string sl, string tp,
+                    double open_price, double close_price, string pips, string profit, string comment)
 {
-    bool res, is_long = is_long_str == "1";
+    bool res;
     string name = obj_name (objects_count);
     string comm;
+    int start, end;
+
+    start = iBarShift (NULL, 0, open_ts);
+    end = iBarShift (NULL, 0, close_ts);
+
+    if (start == -1 || end == -1 || start == end)
+        return (false);
+
+    // fill tables
+    long_order[order_index] = is_long;
+    start_bar[order_index] = start;
+    end_bar[order_index] = end;
+    open_prices[order_index] = open_price;
+    close_prices[order_index] = close_price;
 
     // Open object
-    res = ObjectCreate (name, OBJ_ARROW, 0, StrToInteger (open_ts), StrToDouble (open_price));
+    res = ObjectCreate (name, OBJ_ARROW, 0, open_ts, open_price);
     if (!res)
         return;
     if (is_long) {
@@ -146,12 +170,13 @@ void make_object_for_order (string open_ts, string close_ts, string is_long_str,
         comm = "Short, ";
     }
     ObjectSetText (name, comm + lots + " lots, sl @" + sl + ", tp @" + tp + ", comment '" + comment + "'");
+    ObjectSet (name, OBJPROP_WIDTH, 3);
 
     objects_count++;
     name = obj_name (objects_count);
 
     // Close object
-    ObjectCreate (name, OBJ_ARROW, 0, StrToInteger (close_ts), StrToDouble (close_price));
+    ObjectCreate (name, OBJ_ARROW, 0, close_ts, close_price);
 
     if (StrToDouble (profit) > 0) {
         ObjectSet (name, OBJPROP_ARROWCODE, SYMBOL_CHECKSIGN);
@@ -161,8 +186,35 @@ void make_object_for_order (string open_ts, string close_ts, string is_long_str,
         ObjectSet (name, OBJPROP_ARROWCODE, SYMBOL_STOPSIGN);
         ObjectSet (name, OBJPROP_COLOR, Red);
     }
+    ObjectSet (name, OBJPROP_WIDTH, 3);
     ObjectSetText (name, "Profit $" + profit + " (" + pips + " pips)");
     objects_count++;
+    return (true);
+}
+
+
+int get_orders_count (string acc_id, string pair)
+{
+    int cols[1];
+    int handle = sqlite_query (db_file, "select count(*) from orders where acc_id = '" + acc_id + "' and pair = '" + pair + "'", cols);
+    int res = 0;
+
+    if (sqlite_next_row (handle) == 1)
+        res = StrToInteger (sqlite_get_col (handle, 0));
+
+    sqlite_free_query (handle);
+    return (res);
+}
+
+
+void make_arrays (int orders)
+{
+    orders_count = orders;
+    ArrayResize (start_bar, orders);
+    ArrayResize (end_bar, orders);
+    ArrayResize (long_order, orders);
+    ArrayResize (open_prices, orders);
+    ArrayResize (close_prices, orders);
 }
 
 
@@ -171,19 +223,19 @@ void make_objects ()
     int cols[1];
     int handle = sqlite_query (db_file, "select " + orders_fields + " from orders where acc_id = '" + account_id +
                                "' and pair = '" + Symbol () + "'", cols);
+    int order_index = 0;
+
+    make_arrays (get_orders_count (account_id, Symbol ()));
 
     while (sqlite_next_row (handle) == 1) {
-        make_object_for_order (sqlite_get_col (handle, 2),
-                               sqlite_get_col (handle, 3),
-                               sqlite_get_col (handle, 4),
-                               sqlite_get_col (handle, 5),
-                               sqlite_get_col (handle, 6),
-                               sqlite_get_col (handle, 7),
-                               sqlite_get_col (handle, 8),
-                               sqlite_get_col (handle, 9),
-                               sqlite_get_col (handle, 10),
-                               sqlite_get_col (handle, 11),
-                               sqlite_get_col (handle, 12));
+        if (process_order (order_index,
+                           StrToInteger (sqlite_get_col (handle, 2)),  StrToInteger (sqlite_get_col (handle, 3)),
+                           sqlite_get_col (handle, 4) == "1",  sqlite_get_col (handle, 5),
+                           sqlite_get_col (handle, 6),  sqlite_get_col (handle, 7),
+                           StrToDouble (sqlite_get_col (handle, 8)),  StrToDouble (sqlite_get_col (handle, 9)),
+                           sqlite_get_col (handle, 10), sqlite_get_col (handle, 11),
+                           sqlite_get_col (handle, 12)))
+            order_index++;
     }
 
     sqlite_free_query (handle);
@@ -193,6 +245,13 @@ void make_objects ()
 int init ()
 {
     string pair = Symbol ();
+
+    SetIndexBuffer (0, long_buffer);
+    SetIndexStyle  (0, DRAW_LINE, STYLE_SOLID, 2, Green);
+    SetIndexLabel  (0, "Long order");
+    SetIndexBuffer (1, short_buffer);
+    SetIndexStyle  (1, DRAW_LINE, STYLE_SOLID, 2, Red);
+    SetIndexLabel  (1, "Short order");
 
     if (!sqlite_table_exists (db_file, "orders"))
         create_schema ();
@@ -215,15 +274,40 @@ int init ()
 }
 
 
+int lookup_order (int bar, bool is_long)
+{
+    for (int i = 0; i < orders_count; i++) {
+        // Please take note that start_bar is always >= end_bar
+        if (start_bar[i] >= bar && end_bar[i] <= bar && long_order[i] == is_long)
+            return (i);
+    }
+
+    return (-1);
+}
+
+double interpolate (int order, int bar)
+{
+    if (order < 0)
+        return (EMPTY_VALUE);
+
+    if (bar == start_bar[order])
+        return (open_prices[order]);
+
+    if (bar == end_bar[order])
+        return (close_prices[order]);
+
+    double res = open_prices[order] + (open_prices[order] - close_prices[order]) * (bar - start_bar[order]) / (start_bar[order] - end_bar[order]);
+    return (res);
+}
+
+
 int start ()
 {
-    if (!show_lines)
-        return (0);
-
     int counted_bars = IndicatorCounted ();
 
     for (int i = 0; i < Bars - counted_bars - 1; i++) {
-        // Interpolate, interpolate, interpolate!
+        long_buffer[i] = interpolate (lookup_order (i, true), i);
+        short_buffer[i] = interpolate (lookup_order (i, false), i);
     }
 
     return (0);
