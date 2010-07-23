@@ -4,6 +4,7 @@ import cgi
 import pickle
 from myfxbook import history
 from myfxbook import account
+from google.appengine.ext import db
 
 print 'Content-Type: text/plain'
 print ''
@@ -38,33 +39,35 @@ if count < acc.orders:
 elif count == acc.orders:
     print 'No new data found, still have %d orders' % acc.orders
 else:
-    print 'Got %d new orders, process them' % (count - acc.orders)
     pairs = {}
-    for order in fetcher.orders[acc.orders:]:
-        pair = order[2]
-        rec = history.MyFXHistoryRecord (account = acc,
-                                         open_at = history.parse_date (order[0]),
-                                         closed_at = history.parse_date (order[1]),
-                                         pair = pair,
-                                         long = order[3] == "Buy",
-                                         size = float (order[4]),
-                                         sl_price = float (order[5]),
-                                         tp_price = float (order[6]),
-                                         open_price = float (order[7]),
-                                         close_price = float (order[8]),
-                                         pips = float (order[11]),
-                                         profit = float (order[12]),
-                                         comment = order[13])
-        rec.put ()
-        if not pair in pairs_map:
-            pairs_map[pair] = 0
-        pairs[pair] = 1
-        acc.orders += 1
-        pairs_map[pair] += 1
+    try:
+        print 'Got %d new orders, process them' % (count - acc.orders)
+        for order in fetcher.orders[acc.orders:]:
+            pair = order[2]
+            rec = history.MyFXHistoryRecord (account = acc,
+                                             open_at = history.parse_date (order[0]),
+                                             closed_at = history.parse_date (order[1]),
+                                             pair = pair,
+                                             long = order[3] == "Buy",
+                                             size = float (order[4]),
+                                             sl_price = float (order[5]),
+                                             tp_price = float (order[6]),
+                                             open_price = float (order[7]),
+                                             close_price = float (order[8]),
+                                             pips = float (order[11]),
+                                             profit = float (order[12]),
+                                             comment = order[13])
+            if not pair in pairs_map:
+                pairs_map[pair] = 0
+            rec.put ()
+            pairs[pair] = 1
+            acc.orders += 1
+            pairs_map[pair] += 1
+            acc.pairs_map = pickle.dumps (pairs_map)
+            acc.put ()
+    except:
+        account.schedule_fetch (acc_id)
     # wipe cache for affected pairs
     for pair in pairs.keys ():
         cache = history.HistoryDataCache (acc_id, pair)
         cache.delete ()
-    if pairs:
-        acc.pairs_map = pickle.dumps (pairs_map)
-        acc.put ()

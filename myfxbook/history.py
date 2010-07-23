@@ -75,10 +75,8 @@ class FXBookHistoryFetcher:
             # parse csv data
             reader = csv.reader (res.content.split ('\n'))
             for row in reader:
-                # empty lines signal about other sections
-                # 13 values are in accounts withown money values display
                 if len (row) != 15 and len (row) != 13: 
-                    break
+                    continue
                 if not row[3] in ['Buy', 'Sell']:
                     continue;
                 if len (row) == 13:
