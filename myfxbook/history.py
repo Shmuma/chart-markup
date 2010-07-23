@@ -2,15 +2,13 @@ from google.appengine.api import memcache
 from google.appengine.api import urlfetch
 from google.appengine.ext import db
 
-from HTMLParser import HTMLParser
-
 import account
 import datetime
 import pickle
+import csv
 
 class MyFXHistoryRecord (db.Model):
     account = db.ReferenceProperty (account.MyFXAccount)
-    page = db.IntegerProperty (required = True)
     pair = db.StringProperty (required = True)
     open_at = db.DateTimeProperty (required = True)
     closed_at = db.DateTimeProperty (required = True)
@@ -64,101 +62,38 @@ class FXBookHistory:
 
 # Class downloads given history page from myfxbook account
 class FXBookHistoryFetcher:
-    def __init__ (self, account, page):
+    def __init__ (self, account):
         self.account = account
-        self.page = page
+        self.orders = []
 
-    def page_url (self):
-        return 'http://www.myfxbook.com/paging.html?pt=4&p=%d&&id=%s&l=x&invitation=&sb=28&st=1&types=0,1,2,4&rand=0.22347837989218533'\
-            % (self.page, self.account)
+    def history_url (self):
+        return 'http://www.myfxbook.com/statements/%s/statement.csv' % self.account
 
     def fetch (self):
-        res = urlfetch.fetch (self.page_url ())
+        res = urlfetch.fetch (self.history_url ())
         if res.status_code == 200:
-            return res.content
-        return None
+            # parse csv data
+            reader = csv.reader (res.content.split ('\n'))
+            for row in reader:
+                # empty lines signal about other sections
+                # 13 values are in accounts withown money values display
+                if len (row) != 15 and len (row) != 13: 
+                    break
+                if not row[3] in ['Buy', 'Sell']:
+                    continue;
+                if len (row) == 13:
+                    val = row[:10] + ['0.0', row[10], '0.0', row[11], '0']
+                else:
+                    val = row
+                # we insert in front, because data is sorted descending open timestamp
+                self.orders.insert (0, val)
+        return len (self.orders)
 
 
-
-# Parser of history data. Returns list of hashes with orders performed.
-class HistoryHtmlParser (HTMLParser):
-    def reset (self):
-        HTMLParser.reset (self)
-        self.entry = {}
-        self.res = ""
-        self.in_tr = False
-        self.in_td = False
-        self.td_index = 0
-        self.tr_count = 0
-        # output
-        self.data = []
-        self.complete = False
-
-    def has_class (self, attrs):
-        for a,b in attrs:
-            if a == "class":
-                return True
-        return False
-
-    def handle_starttag (self, tag, attrs):
-        if tag == "tr" and self.has_class (attrs):
-            self.in_tr = True
-            return
-        if not self.in_tr:
-            return
-        if tag == "td":
-            self.td_index += 1
-            self.in_td = True
-
-    def handle_data (self, data):
-        txt = data.strip ()
-        if self.in_tr and self.in_td and txt:
-            if self.td_index == 1:
-                self.res += "\n"
-            self.entry[self.index2key (self.td_index)] = txt
-            self.res += "%d: %s\n" % (self.td_index, txt)
-
-    def handle_endtag (self, tag):
-        if tag == "tr":
-            self.in_tr = False
-            self.in_td = False
-            self.tr_count += 1
-            self.complete = self.tr_count >= 20
-            self.td_index = 0
-            if self.entry:
-                # filter out deposits
-                if 'pair' in self.entry:
-                    if not 'comment' in self.entry:
-                        self.entry['comment'] = ""
-                    self.data.append (self.entry)
-                self.entry = {}
-        elif tag == "td":
-            self.in_td = False
-
-    def index2key (self, index):
-        map = {
-            1: 'open_at',
-            2: 'closed_at',
-            3: 'pair',
-            4: 'action',
-            5: 'size',
-            6: 'sl_price',
-            7: 'tp_price',
-            8: 'open_price',
-            9: 'close_price',
-            10: 'pips',
-            11: 'profit',
-            12: 'comment'}
-
-        if index in map:
-            return map[index]
-        else:
-            return 'unknown'
-
-# parse '05.12.2010 20:50' to datetime
+# parse '05/13/2010 20:50' to datetime
 def parse_date (str):
     date,time = str.split (' ')
-    mon,day,year = date.split ('.')
+    mon,day,year = date.split ('/')
     hr,min = time.split (':')
     return datetime.datetime (int (year), int (mon), int (day),
                               int (hr), int (min))

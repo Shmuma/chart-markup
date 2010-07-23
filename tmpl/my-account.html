@@ -41,7 +41,6 @@
         <th class="display">№</th>
         <th class="display">ID</th>
         <th class="display">Offset (min)</th>
-        <th class="display" nowrap="1">Last page</th>
         <th class="display">Orders</th>
         <th class="display">Pairs</th>
         <th class="display">Change</th>
@@ -51,7 +50,6 @@
         <td class="display">{{ forloop.counter }}</td>
         <td class="display"><a href="{{ account.url }}">{{ account.id }}</a></td>
         <td class="display">{{ account.delta_minutes }}</td>
-        <td class="display">{{ account.last_page }}</td>
         <td class="display">{{ account.orders }}</td>
         <td class="display">
           {% for pair in account.pairs %}

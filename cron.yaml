@@ -1,0 +1,4 @@
+cron:
+  - description: schedule tasks for each MyFX account
+    url: /fetch-all
+    schedule: every 10 minutes

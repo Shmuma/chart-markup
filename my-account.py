@@ -39,7 +39,6 @@ class MyFXAccount (webapp.RequestHandler):
                          'id': acc.id,
                          'delta_minutes': acc.delta_minutes,
                          'orders': acc.orders,
-                         'last_page': acc.last_page,
                          'key': acc.key (),
                          'pairs': pairs
                          }
@@ -86,7 +85,7 @@ class MyFXAccount (webapp.RequestHandler):
         acc = account.MyFXAccount (id = id, url = url, delta_minutes = delta)
         acc.put ()
         # schedule account fetch
-        account.schedule_fetch (id, time=1)
+        account.schedule_fetch (id)
         self.redirect_message ("Account %s created" % id)
 
 
