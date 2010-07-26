@@ -246,6 +246,13 @@ int init ()
 {
     string pair = Symbol ();
 
+    if (IsDllsAllowed ())
+        Print ("DLLs are allowed, ok");
+    else {
+        Print ("DLLs are disabled, fail");
+        return (-1);
+    }
+
     SetIndexBuffer (0, long_buffer);
     SetIndexStyle  (0, DRAW_LINE, STYLE_SOLID, 2, Green);
     SetIndexLabel  (0, "Long order");
