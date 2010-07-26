@@ -85,8 +85,8 @@ void insert_order (string acc_id, string pair, string line)
 
     fields[0] = acc_id;
     fields[1] = pair;
-    fields[2] = parse_iso_date (items[0], 2*60*60);
-    fields[3] = parse_iso_date (items[1], 2*60*60);
+    fields[2] = parse_iso_date (items[0], 0);
+    fields[3] = parse_iso_date (items[1], 0);
     if (items[2] == "True")
         fields[4] = 1;
     else

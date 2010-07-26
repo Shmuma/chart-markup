@@ -47,7 +47,8 @@ string str_replace (string data, string a, string b)
 datetime parse_iso_date (string val, int delta)
 {
     string a = str_replace (val, "-", ".");
-    return (StrToTime (a) + delta);
+    int res = StrToTime (a);
+    return (res + delta);
 }
 
 
