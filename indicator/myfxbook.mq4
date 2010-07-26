@@ -12,6 +12,7 @@ extern string account_id = "38557";
 string db_file = "experts/files/myfxbook.db";
 string orders_fields = "acc_id, pair, open_ts, close_ts, long, lots, sl, tp, open_price, close_price, pips, profit, comment";
 
+bool objects_made = false;
 int objects_count = 0;          // Amount of created objects. Used in destruction.
 
 // order tables
@@ -239,6 +240,7 @@ void make_objects ()
     }
 
     sqlite_free_query (handle);
+    objects_made = true;
 }
 
 
@@ -274,9 +276,6 @@ int init ()
         update_data (account_id, pair);
     }
 
-    // create symbols according to data in DB.
-    make_objects ();
-
     return (0);
 }
 
@@ -311,6 +310,10 @@ double interpolate (int order, int bar)
 int start ()
 {
     int counted_bars = IndicatorCounted ();
+
+    // create symbols according to data in DB.
+    if (!objects_made)
+        make_objects ();
 
     for (int i = 0; i < Bars - counted_bars - 1; i++) {
         long_buffer[i] = interpolate (lookup_order (i, true), i);
