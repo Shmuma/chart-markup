@@ -19,12 +19,12 @@ int objects_count = 0;          // Amount of created objects. Used in destructio
 int orders_count;
 int start_bar[1];
 int end_bar[1];
-bool long_order[1];
+bool prof_order[1];
 double open_prices[1];
 double close_prices[1];
 
-double long_buffer[];
-double short_buffer[];
+double prof_buffer[];
+double loss_buffer[];
 
 
 void create_schema ()
@@ -178,7 +178,7 @@ bool process_order (int order_index, datetime open_ts, datetime close_ts, bool i
         return (false);
 
     // fill tables
-    long_order[order_index] = is_long;
+    prof_order[order_index] = StrToDouble (pips) > 0;
     start_bar[order_index] = start;
     end_bar[order_index] = end;
     open_prices[order_index] = open_price;
@@ -241,7 +241,7 @@ void make_arrays (int orders)
     orders_count = orders;
     ArrayResize (start_bar, orders);
     ArrayResize (end_bar, orders);
-    ArrayResize (long_order, orders);
+    ArrayResize (prof_order, orders);
     ArrayResize (open_prices, orders);
     ArrayResize (close_prices, orders);
 }
@@ -283,12 +283,12 @@ int init ()
         return (-1);
     }
 
-    SetIndexBuffer (0, long_buffer);
-    SetIndexStyle  (0, DRAW_LINE, STYLE_SOLID, 2, Green);
-    SetIndexLabel  (0, "Long order");
-    SetIndexBuffer (1, short_buffer);
+    SetIndexBuffer (0, prof_buffer);
+    SetIndexStyle  (0, DRAW_LINE, STYLE_SOLID, 2, Yellow);
+    SetIndexLabel  (0, "Order+");
+    SetIndexBuffer (1, loss_buffer);
     SetIndexStyle  (1, DRAW_LINE, STYLE_SOLID, 2, Red);
-    SetIndexLabel  (1, "Short order");
+    SetIndexLabel  (1, "Order-");
 
     if (!sqlite_table_exists (db_file, "orders"))
         create_schema ();
@@ -308,11 +308,11 @@ int init ()
 }
 
 
-int lookup_order (int bar, bool is_long)
+int lookup_order (int bar, bool is_prof)
 {
     for (int i = 0; i < orders_count; i++) {
         // Please take note that start_bar is always >= end_bar
-        if (start_bar[i] >= bar && end_bar[i] <= bar && long_order[i] == is_long)
+        if (start_bar[i] >= bar && end_bar[i] <= bar && prof_order[i] == is_prof)
             return (i);
     }
 
@@ -344,8 +344,8 @@ int start ()
         make_objects ();
 
     for (int i = 0; i < Bars - counted_bars - 1; i++) {
-        long_buffer[i] = interpolate (lookup_order (i, true), i);
-        short_buffer[i] = interpolate (lookup_order (i, false), i);
+        prof_buffer[i] = interpolate (lookup_order (i, true), i);
+        loss_buffer[i] = interpolate (lookup_order (i, false), i);
     }
 
     return (0);
