@@ -68,9 +68,8 @@ else:
         account.schedule_fetch (acc_id)
     acc.pairs_map = pickle.dumps (pairs_map)
     acc.put ()
-    if pairs:
-        account.set_last_update (acc_id)
-    # wipe cache for affected pairs
+    # wipe cache for affected pairs and update timestamp
     for pair in pairs:
         cache = history.HistoryDataCache (acc_id, pair)
         cache.delete ()
+        account.set_last_update (acc_id, pair)

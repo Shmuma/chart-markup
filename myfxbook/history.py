@@ -129,3 +129,4 @@ def cleanup_cache (acc):
     pairs_map = pickle.loads (acc.pairs_map)
     for pair in pairs_map.keys ():
         HistoryDataCache (acc.id, pair).delete ()
+        account.set_last_update (acc.id, pair)

@@ -30,7 +30,7 @@ double short_buffer[];
 void create_schema ()
 {
     sqlite_exec (db_file, "create table orders (" + orders_fields + ")");
-    sqlite_exec (db_file, "create table updated (acc_id, ts)");
+    sqlite_exec (db_file, "create table updated (acc_id, pair, ts)");
 }
 
 
@@ -60,8 +60,8 @@ bool is_data_expired (string acc_id, string pair)
 {
     int cols[1];
     int handle = sqlite_query (db_file, "select count(*),updated.ts from orders "+
-                               "left outer join updated on orders.acc_id=updated.acc_id "+
-                               "where orders.acc_id='" + acc_id + "'", cols);
+                               "left outer join updated on orders.acc_id=updated.acc_id and orders.pair=updated.pair "+
+                               "where orders.acc_id='" + acc_id + "' and orders.pair='" + pair + "'", cols);
     bool res = true;
     int count, q_count;
     datetime updated = 0, q_updated;
@@ -71,6 +71,7 @@ bool is_data_expired (string acc_id, string pair)
         count = query_orders_count (acc_id, pair, updated);
         // if we failed to fetch actual count, do not update information
         if (count < 0) {
+            Print ("Failed to fetch data");
             sqlite_free_query (handle);
             return (false);
         }
@@ -87,9 +88,9 @@ bool is_data_expired (string acc_id, string pair)
 
     sqlite_free_query (handle);
     if (create)
-        sqlite_exec (db_file, "insert into updated (acc_id, ts) values ('" + acc_id + "','"+updated+"')");
+        sqlite_exec (db_file, "insert into updated (acc_id, pair, ts) values ('" + acc_id + "','" + pair + "','" + updated + "')");
     else
-        sqlite_exec (db_file, "update updated set ts='"+updated+"' where acc_id='" + acc_id + "'");
+        sqlite_exec (db_file, "update updated set ts='"+updated+"' where acc_id='" + acc_id + "' and pair='" + pair + "'");
     return (res);
 }
 

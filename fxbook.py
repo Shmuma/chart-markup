@@ -23,7 +23,7 @@ pair = cgi.FieldStorage ()['pair'].value
 
 # In count_mode we just display count of orders by given currency pair and account id
 if count_mode:
-    updated = account.get_last_update (acc_id)
+    updated = account.get_last_update (acc_id, pair)
     acc = account.by_id (acc_id)
     if not acc.pairs_map:
         print '0,%s' % updated
