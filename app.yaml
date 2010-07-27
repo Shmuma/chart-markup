@@ -23,8 +23,8 @@ handlers:
 - url: /css
   static_dir: css
 
-- url: /wipe
-  script: wipe.py
+#- url: /wipe
+#  script: wipe.py
 
-- url: /test
-  script: test.py
+#- url: /test
+#  script: test.py
