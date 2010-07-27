@@ -30,17 +30,26 @@ double short_buffer[];
 void create_schema ()
 {
     sqlite_exec (db_file, "create table orders (" + orders_fields + ")");
+    sqlite_exec (db_file, "create table updated (acc_id, ts)");
 }
 
 
-int query_orders_count (string acc_id, string pair)
+int query_orders_count (string acc_id, string pair, datetime& updated)
 {
     string res;
     int bytes = downloadFile ("http://chart-markup.appspot.com/fxbook?id=" + acc_id + "&pair=" + pair + "&count=1", res);
+    string vals[1];
+
+    updated = 0;
 
     if (bytes > 0) {
         res = StringTrimRight (res);
-        return (StrToInteger (res));
+        if (split (res, ",", vals) == 2) {
+            updated = StrToInteger (vals[1]);
+            return (StrToInteger (vals[0]));
+        }
+        else
+            return (-1);
     }
     else
         return (-1);
@@ -50,19 +59,37 @@ int query_orders_count (string acc_id, string pair)
 bool is_data_expired (string acc_id, string pair)
 {
     int cols[1];
-    int handle = sqlite_query (db_file, "select count(*) from orders where acc_id = '" + acc_id + "' and pair = '" + pair + "'", cols);
+    int handle = sqlite_query (db_file, "select count(*),updated.ts from orders "+
+                               "left outer join updated on orders.acc_id=updated.acc_id "+
+                               "where orders.acc_id='" + acc_id + "'", cols);
     bool res = true;
-    int count;
+    int count, q_count;
+    datetime updated = 0, q_updated;
+    bool create = false;
     
     if (sqlite_next_row (handle) == 1) {
-        count = query_orders_count (acc_id, pair);
-        if (count < 0)
-            res = false;        // if we failed to fetch actual count, do not update information
-        res = StrToInteger (sqlite_get_col (handle, 0)) != count;
+        count = query_orders_count (acc_id, pair, updated);
+        // if we failed to fetch actual count, do not update information
+        if (count < 0) {
+            sqlite_free_query (handle);
+            return (false);
+        }
+
+        q_count = StrToInteger (sqlite_get_col (handle, 0));
+        if (sqlite_get_col (handle, 1) == "") {
+            create = true;
+            q_updated = 0;
+        }
+        else
+            q_updated = StrToInteger (sqlite_get_col (handle, 1));
+        res = q_count != count || q_updated != updated;
     }
 
     sqlite_free_query (handle);
-
+    if (create)
+        sqlite_exec (db_file, "insert into updated (acc_id, ts) values ('" + acc_id + "','"+updated+"')");
+    else
+        sqlite_exec (db_file, "update updated set ts='"+updated+"' where acc_id='" + acc_id + "'");
     return (res);
 }
 

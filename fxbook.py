@@ -23,15 +23,16 @@ pair = cgi.FieldStorage ()['pair'].value
 
 # In count_mode we just display count of orders by given currency pair and account id
 if count_mode:
+    updated = account.get_last_update (acc_id)
     acc = account.by_id (acc_id)
     if not acc.pairs_map:
-        print '0'
+        print '0,%s' % updated
     else:
         pairs_map = pickle.loads (acc.pairs_map)
         if pair in pairs_map:
-            print pairs_map[pair]
+            print "%s,%s" % (pairs_map[pair], updated)
         else:
-            print '0'
+            print '0,%s' % updated
 else:
     cache = history.HistoryDataCache (acc_id, pair)
     res = cache.csv ()

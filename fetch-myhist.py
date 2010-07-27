@@ -40,7 +40,7 @@ if count < acc.orders:
 elif count == acc.orders:
     print 'No new data found, still have %d orders' % acc.orders
 else:
-    pairs = {}
+    pairs = set ()
     try:
         print 'Got %d new orders, process them' % (count - acc.orders)
         for order in fetcher.orders[acc.orders:]:
@@ -61,14 +61,16 @@ else:
             if not pair in pairs_map:
                 pairs_map[pair] = 0
             rec.put ()
-            pairs[pair] = 1
+            pairs.add (pair)
             acc.orders += 1
             pairs_map[pair] += 1
     except:
         account.schedule_fetch (acc_id)
     acc.pairs_map = pickle.dumps (pairs_map)
     acc.put ()
+    if pairs:
+        account.set_last_update (acc_id)
     # wipe cache for affected pairs
-    for pair in pairs.keys ():
+    for pair in pairs:
         cache = history.HistoryDataCache (acc_id, pair)
         cache.delete ()

@@ -101,6 +101,7 @@ class MyFXAccount (webapp.RequestHandler):
         acc.delta_minutes = delta
         acc.put ()
         history.cleanup_cache (acc)
+        account.set_last_update (acc.id)
         self.redirect_message ("Account updated")
 
 

@@ -1,4 +1,7 @@
+import time
+
 from google.appengine.ext import db
+from google.appengine.api import memcache
 from google.appengine.api.labs import taskqueue
 
 
@@ -19,3 +22,13 @@ def schedule_fetch (acc_id):
     q = taskqueue.Queue ("myfxhistory")
     q.add (taskqueue.Task (method = "GET", url = "/fetch-myhist?id=%s" % acc_id))
 
+
+def get_last_update (acc_id):
+    ts = memcache.get ("myfx-last-%s" % acc_id)
+    if ts:
+        return ts
+    else:
+        return "0"
+
+def set_last_update (acc_id):
+    memcache.set ("myfx-last-%s" % acc_id, int (time.time ()))
