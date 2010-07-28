@@ -12,6 +12,8 @@ class MyFXAccount (db.Model):
     url = db.StringProperty ()
     pairs_map = db.BlobProperty ()
     delta_minutes = db.IntegerProperty (default = 0)
+    notes = db.StringProperty ()
+    wave_url = db.StringProperty ()
 
 
 def by_id (id):

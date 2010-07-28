@@ -21,8 +21,16 @@
           <td><input type="text" name="url" value="{{edit.url}}"/></td>
         </tr>
         <tr>
+          <td>Wave URL</td>
+          <td><input type="text" name="wave_url" value="{{edit.wave_url}}"/></td>
+        </tr>
+        <tr>
           <td>Time offset (min)</td>
           <td><input type="text" name="delta_minutes" value="{{edit.delta_minutes}}"/></td>
+        </tr>
+        <tr>
+          <td>Notes</td>
+          <td><input type="text" name="notes" value="{{edit.notes}}"/></td>
         </tr>
         <tr>
         {% if add_form %}
@@ -43,12 +51,17 @@
         <th class="display">Offset (min)</th>
         <th class="display">Orders</th>
         <th class="display">Pairs</th>
+        <th class="display">Notes</th>
         <th class="display">Change</th>
       </tr>
       {% for account in accounts %}
       <tr>
         <td class="display">{{ forloop.counter }}</td>
-        <td class="display"><a href="{{ account.url }}">{{ account.id }}</a></td>
+        <td class="display" nowrap="1"><a href="{{ account.url }}">{{ account.id }}</a>
+          {% if account.wave_url %}
+          &nbsp;<a href="{{account.wave_url}}">wave</a>
+          {% endif %}
+        </td>
         <td class="display">{{ account.delta_minutes }}</td>
         <td class="display">{{ account.orders }}</td>
         <td class="display">
@@ -56,6 +69,7 @@
           <a href="{{pair.url}}">{{pair.pair}}:&nbsp;{{pair.count}}</a> 
           {% endfor %}
         </td>
+        <td class="display">{{ account.notes }}</td>
         <td class="display" nowrap="1">
           <a href="/my-account?edit={{account.key}}">Edit</a>&nbsp;
           <a href="/my-account?delete={{account.key}}">Delete</a>
