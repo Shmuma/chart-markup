@@ -21,7 +21,7 @@
           <td><input type="text" name="url" value="{{edit.url}}"/></td>
         </tr>
         <tr>
-          <td>Wave URL</td>
+          <td>Docs URL</td>
           <td><input type="text" name="wave_url" value="{{edit.wave_url}}"/></td>
         </tr>
         <tr>
@@ -59,7 +59,7 @@
         <td class="display">{{ forloop.counter }}</td>
         <td class="display" nowrap="1"><a href="{{ account.url }}">{{ account.id }}</a>
           {% if account.wave_url %}
-          &nbsp;<a href="{{account.wave_url}}">wave</a>
+          &nbsp;<a href="{{account.wave_url}}">docs</a>
           {% endif %}
         </td>
         <td class="display">{{ account.delta_minutes }}</td>
